@@ -1,0 +1,17 @@
+<!-- list.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lista de Productos</title>
+</head>
+<body>
+    <h1>Productos</h1>
+    <ul>
+        {% for product in products %}
+            <li>{{ product.name }} - ${{ product.price }}</li>
+        {% empty %}
+            <li>No hay productos.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
