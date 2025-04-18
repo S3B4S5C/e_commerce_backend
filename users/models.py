@@ -7,17 +7,6 @@ class Role(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=50, unique=True)
 
-class UserAccountManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError("El email es obligatorio")
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-
 class UserAccount(AbstractBaseUser):
     
     class RoleChoices(models.TextChoices):
@@ -43,8 +32,6 @@ class UserAccount(AbstractBaseUser):
     
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    
-    objects = UserAccountManager()
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name', 'cellphone', 'birth_date', 'gender', 'role']

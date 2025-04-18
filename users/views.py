@@ -1,10 +1,8 @@
-from django.shortcuts import render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.authtoken.models import Token
 from rest_framework import status
-from .serializers import UserAccountSerializer, RoleSerializer
+from .serializers import UserAccountSerializer
 from .models import UserAccount
 from rest_framework.permissions import IsAuthenticated
 
@@ -13,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 @api_view(['POST'])
 def create_user(request):
     """
-    Create a new user account.
+    Crear cuenta nueva.
     """
     serializer = UserAccountSerializer(data=request.data)
     
@@ -43,22 +41,25 @@ def create_user(request):
 @permission_classes([IsAuthenticated])
 def test_token(request):
     """
-    Get all roles.
+    PRUEBA PARA LOS TOKENS
     """
     # roles = RoleSerializer(UserAccount.objects.all(), many=True).data
     return Response({'message': 'Ruta autorizada'}, status=status.HTTP_200_OK)
 
 @api_view(['POST']) 
 def login_user(request):
-    """
-    Login a user and return JWT tokens.
-    """
     email = request.data.get('email')
-    print(email)
-    password = request.data['password']
-    print(password)
+    password = request.data.get('password')
+
+    print(f"Email recibido: {email}")
+    print(f"Password recibido: {password}")
+
     try:
         user = UserAccount.objects.get(email=email)
+        print(f"Usuario encontrado: {user.email}")
+        print(f"Hash almacenado: {user.password}")
+        print(f"check_password result: {user.check_password(password)}")
+
         if user.check_password(password):
             refresh = RefreshToken.for_user(user)
             return Response({
@@ -69,4 +70,5 @@ def login_user(request):
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
     except UserAccount.DoesNotExist:
+        print("Usuario no encontrado")
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
