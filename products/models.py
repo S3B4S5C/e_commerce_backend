@@ -2,6 +2,7 @@
 from django.db import models
 import uuid
 
+
 class Product(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
@@ -14,11 +15,13 @@ class Product(models.Model):
     modified_at = models.DateTimeField()
     deleted_at = models.DateTimeField(null=True, blank=True)
 
+
 class Tag(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=50)
     created_at = models.DateTimeField()
     modified_at = models.DateTimeField()
+
 
 class Tagged(models.Model):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
@@ -28,6 +31,7 @@ class Tagged(models.Model):
 
     class Meta:
         unique_together = ('tag', 'product')
+
 
 class Stock(models.Model):
     branch = models.ForeignKey('locations.Branch', on_delete=models.CASCADE)
@@ -39,6 +43,7 @@ class Stock(models.Model):
     class Meta:
         unique_together = ('branch', 'product')
 
+
 class ProductReview(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -46,17 +51,19 @@ class ProductReview(models.Model):
     rating = models.IntegerField()
     comment = models.TextField()
     created_at = models.DateTimeField()
+    modified_at = models.DateTimeField()
 
     def clean(self):
         from django.core.exceptions import ValidationError
         if not (1 <= self.rating <= 5):
             raise ValidationError("Rating must be between 1 and 5.")
 
+
 class FavoriteProduct(models.Model):
     user = models.ForeignKey('users.UserAccount', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     created_at = models.DateTimeField()
+    modified_at = models.DateTimeField()
 
     class Meta:
         unique_together = ('user', 'product')
-

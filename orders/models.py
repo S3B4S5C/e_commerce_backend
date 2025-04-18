@@ -3,6 +3,7 @@ from django.db import models
 import uuid
 from datetime import timedelta
 
+
 class PaymentDetail(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     state = models.CharField(max_length=50)
@@ -10,15 +11,18 @@ class PaymentDetail(models.Model):
     created_at = models.DateTimeField()
     modified_at = models.DateTimeField()
 
+
 class ShippingMethod(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     cost = models.DecimalField(max_digits=10, decimal_places=2)
     estimated_time = models.DurationField(default=timedelta(0))
 
+
 class OrderStatus(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=50, unique=True)
+
 
 class Order(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -33,6 +37,7 @@ class Order(models.Model):
     modified_at = models.DateTimeField()
     deleted_at = models.DateTimeField(null=True, blank=True)
 
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     product = models.ForeignKey('products.Product', on_delete=models.CASCADE)
@@ -42,6 +47,7 @@ class OrderItem(models.Model):
 
     class Meta:
         unique_together = ('order', 'product')
+
 
 class Invoice(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

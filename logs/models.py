@@ -2,6 +2,7 @@
 from django.db import models
 import uuid
 
+
 class ActivityLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey('users.UserAccount', on_delete=models.CASCADE)
