@@ -37,9 +37,11 @@ Asegúrate de tener instalados los siguientes programas en tu sistema:
     Crea un archivo `.env` en la raíz del proyecto y define las siguientes variables:
 
     ```
-    SECRET_KEY=tu_secreto
-    DEBUG=True
-    DATABASE_URL=postgres://usuario:contraseña@localhost:5432/e_commerce
+    DB_NAME=e-commerce
+    DB_USER=postgres
+    DB_PASSWORD=1509
+    DB_HOST=localhost
+    DB_PORT=5432
     ```
 
 5. Realiza las migraciones de la base de datos:
@@ -71,9 +73,3 @@ Asegúrate de tener instalados los siguientes programas en tu sistema:
 - `django`: Framework principal para el desarrollo del proyecto.
 - `djangorestframework`: Herramientas para construir APIs REST.
 - `psycopg2-binary`: Conector para interactuar con PostgreSQL.
-
-## Contribuciones
-
-Si deseas contribuir, por favor abre un issue o envía un pull request.
-
-¡Gracias por usar este proyecto!

@@ -1,15 +1,11 @@
 e-commerce-venv
 db.sqlite3
-# Ignorar cachés
+
 __pycache__/
 *.py[cod]
 
-# Si usás SQLite (no tu caso, usás PostgreSQL)
-*.sqlite3
-
-# Si tenés archivos temporales de VSCode, PyCharm, etc.
 *.vscode/
 *.idea/
-
-# ⚠️ Solo esto si aparece automáticamente
 **/migrations/__pycache__/
+
+.env
