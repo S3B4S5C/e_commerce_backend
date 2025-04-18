@@ -3,12 +3,13 @@ from django.db import models
 import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
+
 class Role(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=50, unique=True)
 
 class UserAccount(AbstractBaseUser):
-    
+
     class RoleChoices(models.TextChoices):
         ADMIN = 'ADMIN', 'Admin'
         CLIENT = 'CLIENT', 'Client'
@@ -29,12 +30,12 @@ class UserAccount(AbstractBaseUser):
         choices=RoleChoices.choices,
         default=RoleChoices.CLIENT
     )
-    
+
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name', 'cellphone', 'birth_date', 'gender', 'role']
-    
+
     def __str__(self):
         return self.email
