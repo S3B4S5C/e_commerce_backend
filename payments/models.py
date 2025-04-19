@@ -8,8 +8,8 @@ class PaymentMethod(models.Model):
     type = models.CharField(max_length=50)
     number = models.CharField(max_length=19)
     expire_date = models.DateField()
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
 
 class Coupon(models.Model):
@@ -18,8 +18,8 @@ class Coupon(models.Model):
     type = models.CharField(max_length=50)
     code = models.CharField(max_length=50)
     discount = models.IntegerField()
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
 
 class CouponUser(models.Model):
@@ -27,8 +27,8 @@ class CouponUser(models.Model):
     coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE)
     user = models.ForeignKey('users.UserAccount', on_delete=models.CASCADE)
     use_date = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('user', 'coupon')

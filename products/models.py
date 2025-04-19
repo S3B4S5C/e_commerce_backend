@@ -11,23 +11,23 @@ class Product(models.Model):
     category = models.CharField(max_length=100)
     photo = models.CharField(max_length=255)
     brand = models.CharField(max_length=100)
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
 
 class Tag(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=50)
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
 
 class Tagged(models.Model):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('tag', 'product')
@@ -37,8 +37,8 @@ class Stock(models.Model):
     branch = models.ForeignKey('locations.Branch', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('branch', 'product')
@@ -50,8 +50,7 @@ class ProductReview(models.Model):
     user = models.ForeignKey('users.UserAccount', on_delete=models.CASCADE)
     rating = models.IntegerField()
     comment = models.TextField()
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
         from django.core.exceptions import ValidationError
@@ -62,8 +61,7 @@ class ProductReview(models.Model):
 class FavoriteProduct(models.Model):
     user = models.ForeignKey('users.UserAccount', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('user', 'product')

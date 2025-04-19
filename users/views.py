@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
-from .serializers import UserAccountSerializer
+from .serializers import UserAccountSerializer, UserProfileSerializer
 from .models import UserAccount
 from rest_framework.permissions import IsAuthenticated
 
@@ -14,15 +14,15 @@ def create_user(request):
     Crear cuenta nueva.
     """
     serializer = UserAccountSerializer(data=request.data)
-    
+
     if serializer.is_valid():
         serializer.save()
         user = UserAccount.objects.get(email=serializer.validated_data['email'])
         user.set_password(user.password)  # Hash the password before saving
         user.save(update_fields=['password'])  # Save the user with the hashed password
-        
+
         refresh = RefreshToken.for_user(user)
-        
+
         return Response({
             'user': {
                 'id': str(user.id),
@@ -37,6 +37,7 @@ def create_user(request):
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def test_token(request):
@@ -46,7 +47,8 @@ def test_token(request):
     # roles = RoleSerializer(UserAccount.objects.all(), many=True).data
     return Response({'message': 'Ruta autorizada'}, status=status.HTTP_200_OK)
 
-@api_view(['POST']) 
+
+@api_view(['POST'])
 def login_user(request):
     email = request.data.get('email')
     password = request.data.get('password')
@@ -72,3 +74,55 @@ def login_user(request):
     except UserAccount.DoesNotExist:
         print("Usuario no encontrado")
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def query_profile(request):
+    """
+    Obtener el perfil del usuario autenticado
+    """
+    user = request.user
+    serializer = UserProfileSerializer(user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    """
+    Editar el perfil del usuario autenticado
+    """
+    user = request.user
+    serializer = UserProfileSerializer(user, data=request.data, partial=True)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            'message': 'Perfil actualizado correctamente',
+            'user': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """
+    Permite al usuario cambiar su contraseña proporcionando la contraseña actual.
+    """
+    user = request.user
+    current_password = request.data.get('password')
+    new_password = request.data.get('new_password')
+
+    if not current_password or not new_password:
+        return Response({'error': 'Se requieren la contraseña actual y la nueva contraseña.'},status=status.HTTP_400_BAD_REQUEST)
+
+    if not user.check_password(current_password):
+        return Response({'error': 'La contraseña actual no es correcta.'},status=status.HTTP_403_FORBIDDEN)
+
+    user.set_password(new_password)
+    user.save()
+
+    return Response({'message': 'Contraseña actualizada exitosamente.'}, status=status.HTTP_200_OK)

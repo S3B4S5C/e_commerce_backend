@@ -1,15 +1,24 @@
 from rest_framework import serializers
 from .models import UserAccount, Role
 
+
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = '__all__'
-        
+
+
 class UserAccountSerializer(serializers.ModelSerializer):
     print("Iniciando el proceso de creación del usuario")
+
     class Meta:
         model = UserAccount
-        fields  = '__all__'
+        fields = '__all__'
         read_only_fields = ['id']
-        
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = UserAccount
+        fields = ['name', 'email', 'cellphone', 'birth_date', 'gender']

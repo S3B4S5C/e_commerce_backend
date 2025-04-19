@@ -8,8 +8,8 @@ class Coordinate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     lat = models.DecimalField(max_digits=9, decimal_places=6)
     lon = models.DecimalField(max_digits=9, decimal_places=6)
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
 
 class Address(models.Model):
@@ -19,15 +19,15 @@ class Address(models.Model):
     street = models.CharField(max_length=255)
     reference = models.CharField(max_length=255)
     coordinate = models.OneToOneField(Coordinate, on_delete=models.CASCADE)
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
 
 class AddressUser(models.Model):
     user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
     address = models.ForeignKey(Address, on_delete=models.CASCADE)
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('user', 'address')
@@ -37,6 +37,6 @@ class Branch(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     address = models.ForeignKey(Address, on_delete=models.CASCADE)
     name = models.CharField(max_length=255, null=True)
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
