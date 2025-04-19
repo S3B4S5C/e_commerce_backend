@@ -4,3 +4,6 @@ psycopg2-binary
 django-cors-headers
 djangorestframework-simplejwt
 python-decouple
+pandas
+scikit-learn
+numpy

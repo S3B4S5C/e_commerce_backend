@@ -271,3 +271,23 @@ def get_random_product(request):
     products = Product.objects.filter(deleted_at__isnull=True).order_by(Random())[:4]
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+from .recomendation import recommend_products
+@api_view(['GET'])
+def get_recommendations(request):
+    try:
+        # Obtener IDs de productos recomendados
+        recommended_ids = recommend_products()
+
+        # Obtener productos desde la base de datos (manteniendo el orden)
+        products = list(Product.objects.filter(id__in=recommended_ids, deleted_at__isnull=True))
+        products_sorted = sorted(products, key=lambda p: recommended_ids.index(str(p.id)))
+
+        # Serializar
+        serializer = ProductSerializer(products_sorted, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
