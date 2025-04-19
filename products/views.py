@@ -7,6 +7,7 @@ from rest_framework import status
 from django.db.models import Q
 from django.utils import timezone
 from django.db.models import Count
+from django.db.models.functions import Random
 
 
 @api_view(['POST'])
@@ -258,5 +259,15 @@ def get_most_favorited_products(request):
         .annotate(favorite_count=Count('favoriteproduct')) \
         .order_by('-favorite_count')
 
+    serializer = ProductSerializer(products, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_random_product(request):
+    """
+    Devuelve 4 productos aleatorios que no han sido eliminados (DB-level).
+    """
+    products = Product.objects.filter(deleted_at__isnull=True).order_by(Random())[:4]
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)

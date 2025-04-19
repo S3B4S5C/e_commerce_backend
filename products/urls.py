@@ -19,5 +19,5 @@ urlpatterns = [
     path('products/delete/<uuid:product_id>', views.delete_product, name='delete-product'),
     path('favorites', views.get_favorite_products, name='get-favorite-products'),
     path('favoritesmost', views.get_most_favorited_products, name='get-most_favorited-products'),
-    path('cors-test/', views.cors_test),
+    path('randomproducts', views.get_random_product, name='get-random-products'),
 ]
