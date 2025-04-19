@@ -24,12 +24,19 @@ def register_product(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def cors_test(request):
+    return JsonResponse({"message": "CORS working!"})
+
 @api_view(['GET'])
 def product_list(request):
+    print('Hola')
     products = Product.objects.filter(deleted_at__isnull=True)
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data)
-
 
 @api_view(['GET'])
 def get_product_categories(request):
