@@ -6,6 +6,7 @@ from datetime import timedelta
 
 class PaymentDetail(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    stripe_payment_id = models.CharField(max_length=255, blank=True, null=True)
     state = models.CharField(max_length=50)
     provider = models.CharField(max_length=50)
     created_at = models.DateTimeField()

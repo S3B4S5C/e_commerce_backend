@@ -17,13 +17,15 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-g-(w41ribbp-_=47(774umf(%$-n9o6#f)d=h!w^k30=&yj7+f'
 
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY')
+# SECURITY WARNING: keep the secret key used in production secret!
+
+SECRET_KEY = 'django-insecure-g-(w41ribbp-_=47(774umf(%$-n9o6#f)d=h!w^k30=&yj7+f'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 

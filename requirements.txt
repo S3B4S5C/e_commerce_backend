@@ -7,3 +7,4 @@ python-decouple
 pandas
 scikit-learn
 numpy
+stripe
