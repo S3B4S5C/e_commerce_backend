@@ -180,6 +180,19 @@ def add_to_favorites(request, product_id):
         return Response({'error': 'Producto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
 
+@api_view(['GET'])
+def get_product_by_id(request, product_id):
+    """
+    Retorna la información de un producto dado su ID.
+    """
+    try:
+        product = Product.objects.get(id=product_id)
+        serializer = ProductSerializer(product)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Product.DoesNotExist:
+        return Response({'error': 'Producto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+
 @api_view(['DELETE'])
 def remove_from_favorites(request, product_id):
     try:
