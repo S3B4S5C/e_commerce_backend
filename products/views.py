@@ -8,6 +8,9 @@ from django.db.models import Q
 from django.utils import timezone
 from django.db.models import Count
 from django.db.models.functions import Random
+from .recomendation import recommend_products
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 
 @api_view(['POST'])
@@ -25,12 +28,10 @@ def register_product(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-
 @csrf_exempt
 def cors_test(request):
     return JsonResponse({"message": "CORS working!"})
+
 
 @api_view(['GET'])
 def product_list(request):
@@ -38,6 +39,7 @@ def product_list(request):
     products = Product.objects.filter(deleted_at__isnull=True)
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 def get_product_categories(request):
@@ -78,6 +80,34 @@ def search_products(request):
         filters &= Q(price__lte=max_price)
 
     products = Product.objects.filter(filters)
+    serializer = ProductSerializer(products, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def search_product(request):
+    """
+    Buscar productos con filtros opcionales:
+    - q (búsqueda general en name, category y brand)
+    - ordering (campo para ordenar: name, category, brand. Agregar '-' para descendente)
+    """
+    query = request.GET.get('q', '')
+    ordering = request.GET.get('ordering', 'name')  # Por defecto ordena por nombre ascendente
+
+    filters = Q(deleted_at__isnull=True)
+
+    if query:
+        filters &= (
+            Q(name__icontains=query) |
+            Q(category__icontains=query) |
+            Q(brand__icontains=query)
+        )
+
+    allowed_orderings = ['name', '-name', 'category', '-category', 'brand', '-brand']
+    if ordering not in allowed_orderings:
+        ordering = 'name'
+
+    products = Product.objects.filter(filters).order_by(ordering)
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -273,7 +303,7 @@ def get_random_product(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-from .recomendation import recommend_products
+
 @api_view(['GET'])
 def get_recommendations(request):
     try:

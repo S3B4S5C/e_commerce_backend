@@ -5,6 +5,7 @@ urlpatterns = [
     path('', views.product_list, name='api-product-list'),
     path('registerProduct', views.register_product, name='api-product-register'),
     path('search', views.search_products, name='search-products'),
+    path('searchProducts', views.search_product, name='search-products'),
     path('categories', views.get_product_categories, name='get-product-categories'),
     path('tags/create', views.create_tag, name='create-tag'),
     path('tags/delete/<uuid:tag_id>', views.delete_tag, name='delete-tag'),
