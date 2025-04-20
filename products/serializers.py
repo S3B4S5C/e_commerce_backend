@@ -30,7 +30,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return TagSerializer(tags, many=True).data
 
     def get_previews(self, obj):
-        reviews = ProductReview.objects.filter(product=obj).order_by('-created_at')[:3]  # últimas 3
+        reviews = ProductReview.objects.filter(product=obj).order_by('-created_at')[:5]  # últimas 5
         return ProductReviewPreviewSerializer(reviews, many=True).data
 
     def get_total_stock(self, obj):

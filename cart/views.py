@@ -54,27 +54,29 @@ def delete_cart(request, cart_id):
 def add_product_to_cart(request):
     """
     Agrega un producto al carrito del usuario autenticado.
-    Requiere: cart_id, product_id, quantity_product
+    Si no hay un carrito activo (deleted_at=None), se crea uno nuevo.
+    Requiere: product_id, quantity_product
     """
-    cart_id = request.data.get('cart_id')
+    user = request.user
     product_id = request.data.get('product_id')
     quantity = int(request.data.get('quantity_product', 1))
 
-    if not cart_id or not product_id:
-        return Response({'error': 'cart_id y product_id son obligatorios.'},
+    if not product_id:
+        return Response({'error': 'product_id es obligatorio.'},
                         status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        cart = Cart.objects.get(id=cart_id, user=request.user, deleted_at__isnull=True)
-    except Cart.DoesNotExist:
-        return Response({'error': 'Carrito no encontrado o eliminado.'},
-                        status=status.HTTP_404_NOT_FOUND)
 
     try:
         product = Product.objects.get(id=product_id)
     except Product.DoesNotExist:
         return Response({'error': 'Producto no encontrado.'},
                         status=status.HTTP_404_NOT_FOUND)
+
+    # Buscar carrito activo
+    cart = Cart.objects.filter(user=user, deleted_at__isnull=True).first()
+
+    # Si no hay carrito activo, crear uno nuevo
+    if not cart:
+        cart = Cart.objects.create(user=user, total_price=0)
 
     # Verificar si el producto ya está en el carrito
     cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
@@ -93,7 +95,8 @@ def add_product_to_cart(request):
     serializer = CartItemSerializer(cart_item)
     return Response({
         'message': 'Producto agregado al carrito exitosamente.',
-        'item': serializer.data
+        'item': serializer.data,
+        'cart_id': cart.id
     }, status=status.HTTP_200_OK)
 
 
