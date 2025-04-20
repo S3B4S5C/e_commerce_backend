@@ -22,4 +22,5 @@ urlpatterns = [
     path('favoritesmost', views.get_most_favorited_products, name='get-most_favorited-products'),
     path('randomproducts', views.get_random_product, name='get-random-products'),
     path('recommended', views.get_recommendations, name='get-recommendations'),
+    path('recommended_cart', views.get_recommendations_cart, name='get-recommended-cart')
 ]

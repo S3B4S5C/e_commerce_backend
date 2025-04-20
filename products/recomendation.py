@@ -1,9 +1,13 @@
+from products.models import FavoriteProduct
+from django.db.models import Count
+from orders.models import OrderItem
+from cart.models import CartItem
+from collections import defaultdict
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 from.models import Product, Tagged, Tag
-from products.models import FavoriteProduct
-from django.db.models import Count
+
 
 def get_product_features_from_db():
     # Paso 1: Obtener todos los productos activos
@@ -41,6 +45,7 @@ def get_product_features_from_db():
 
     return df, product_ids
 
+
 def recommend_products():
     # Paso 1: Obtener el DataFrame de productos y sus IDs
     df, product_ids = get_product_features_from_db()
@@ -65,4 +70,54 @@ def recommend_products():
 
     # Seleccionar los 6 más populares
     top_recommendations = df.sort_values('popularity_score', ascending=False).head(6)
-    return top_recommendations['product_id'].tolist() # o cualquier otra columna que quieras retornar
+    return top_recommendations['product_id'].tolist()
+
+
+def build_product_cooccurrence():
+    """
+    Construye un mapa de productos que suelen aparecer juntos en base a:
+    - Favoritos
+    - Carrito
+    - Compras
+    """
+    data = []
+
+    # Favoritos
+    favorites = FavoriteProduct.objects.values('user_id', 'product_id')
+    for fav in favorites:
+        data.append((fav['user_id'], fav['product_id']))
+
+    # Carrito
+    cart_items = CartItem.objects.values('cart__user_id', 'product_id')
+    for cart in cart_items:
+        data.append((cart['cart__user_id'], cart['product_id']))
+
+    # Compras (usuario-producto desde los items)
+    orders = OrderItem.objects.select_related('order', 'product').values(
+        'order__user_id', 'product_id'
+    )
+    for order in orders:
+        data.append((order['order__user_id'], order['product_id']))
+
+    # Agrupar por usuario → lista de productos
+    df = pd.DataFrame(data, columns=['user_id', 'product_id'])
+    user_product_map = df.groupby('user_id')['product_id'].apply(list)
+
+    # Calcular co-ocurrencias
+    cooccur = defaultdict(lambda: defaultdict(int))
+    for products in user_product_map:
+        for i in range(len(products)):
+            for j in range(len(products)):
+                if i != j:
+                    cooccur[products[i]][products[j]] += 1
+
+    return cooccur
+
+
+def recommend_global_based_on_product(product_id, top_n=6):
+    cooccur = build_product_cooccurrence()
+
+    related = cooccur.get(product_id, {})
+    sorted_related = sorted(related.items(), key=lambda x: x[1], reverse=True)
+
+    return [item[0] for item in sorted_related[:top_n]]

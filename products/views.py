@@ -8,7 +8,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.db.models import Count
 from django.db.models.functions import Random
-from .recomendation import recommend_products
+from .recomendation import recommend_products, recommend_global_based_on_product
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -303,7 +303,6 @@ def get_random_product(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-
 @api_view(['GET'])
 def get_recommendations(request):
     try:
@@ -318,6 +317,40 @@ def get_recommendations(request):
         serializer = ProductSerializer(products_sorted, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_recommendations_cart(request):
+    """
+    Agrega un producto al carrito y devuelve recomendaciones basadas en IA colectiva.
+    Espera: { "product_id": 123 }
+    """
+    user = request.user
+    product_id = request.data.get("product_id")
+
+    if not product_id:
+        return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Lógica para agregar al carrito (simplificada, ajustá si ya tenés lógica propia)
+    from cart.models import Cart, CartItem  # ajustá según tu estructura
+    cart, _ = Cart.objects.get_or_create(user=user)
+    CartItem.objects.update_or_create(cart=cart, product=product, defaults={"quantity": 1})
+
+    # Obtener recomendaciones basadas en el producto
+    recommended_ids = recommend_global_based_on_product(product.id)
+    recommended_products = Product.objects.filter(id__in=recommended_ids)
+
+    serialized_recommendations = ProductSerializer(recommended_products, many=True)
+
+    return Response({
+        "message": "Product added to cart.",
+        "recommended_products": serialized_recommendations.data
+    }, status=status.HTTP_200_OK)
