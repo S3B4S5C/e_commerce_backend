@@ -71,14 +71,11 @@ def add_product_to_cart(request):
         return Response({'error': 'Producto no encontrado.'},
                         status=status.HTTP_404_NOT_FOUND)
 
-    # Buscar carrito activo
     cart = Cart.objects.filter(user=user, deleted_at__isnull=True).first()
 
-    # Si no hay carrito activo, crear uno nuevo
     if not cart:
         cart = Cart.objects.create(user=user, total_price=0)
 
-    # Verificar si el producto ya está en el carrito
     cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
 
     if created:
@@ -141,14 +138,17 @@ def remove_product_from_cart(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def view_cart(request, cart_id):
+def view_cart(request):
     """
-    Muestra el contenido del carrito con los productos y cantidades.
+    Muestra el contenido del carrito activo del usuario autenticado.
     """
+    user = request.user
+
     try:
-        cart = Cart.objects.get(id=cart_id, user=request.user, deleted_at__isnull=True)
+        cart = Cart.objects.get(user=user, deleted_at__isnull=True)
     except Cart.DoesNotExist:
-        return Response({'error': 'Carrito no encontrado o eliminado.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'No hay un carrito activo para este usuario.'},
+                        status=status.HTTP_404_NOT_FOUND)
 
     cart_data = CartSerializer(cart).data
     cart_items = CartItem.objects.filter(cart=cart)
