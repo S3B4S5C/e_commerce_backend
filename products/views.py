@@ -11,6 +11,8 @@ from django.db.models.functions import Random
 from .recomendation import recommend_products, recommend_global_based_on_product
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from logs.utils import get_client_ip
+from logs.models import ActivityLog
 
 
 @api_view(['POST'])
@@ -21,6 +23,14 @@ def register_product(request):
     serializer = ProductSerializer(data=request.data)
     if serializer.is_valid():
         product = serializer.save()
+        ip = get_client_ip(request)
+        ActivityLog.objects.create(
+            type='product',
+            user='ADMIN',
+            action='Se agrego un nuevo producto',
+            entity_id=product.id,
+            ip_address=ip
+        )
         return Response({
             'message': 'Producto creado correctamente',
             'product': ProductSerializer(product).data
@@ -216,6 +226,14 @@ def associate_tag_to_product(request):
         tag = Tag.objects.get(id=tag_id)
         tagged, created = Tagged.objects.get_or_create(product=product, tag=tag)
         if created:
+            ip = get_client_ip(request)
+            ActivityLog.objects.create(
+                type='tag',
+                user='ADMIN',
+                action='Se agrego un tag a un producto',
+                entity_id=product.id,
+                ip_address=ip
+                )
             return Response({'message': 'Tag asociado al producto correctamente'}, status=status.HTTP_201_CREATED)
         else:
             return Response({'message': 'El tag ya estaba asociado a este producto'}, status=status.HTTP_200_OK)
@@ -236,6 +254,14 @@ def remove_tag_from_product(request):
     try:
         tagged = Tagged.objects.get(product_id=product_id, tag_id=tag_id)
         tagged.delete()
+        ip = get_client_ip(request)
+        ActivityLog.objects.create(
+            type='tag',
+            user='ADMIN',
+            action='Se agrego un tag a un producto',
+            entity_id=tag_id.id,
+            ip_address=ip
+                )
         return Response({'message': 'Tag desasociado del producto correctamente'}, status=status.HTTP_200_OK)
     except Tagged.DoesNotExist:
         return Response({'error': 'La relación entre producto y tag no existe'}, status=status.HTTP_404_NOT_FOUND)
@@ -260,6 +286,14 @@ def delete_product(request, product_id):
         product = Product.objects.get(id=product_id)
         product.deleted_at = timezone.now()
         product.save()
+        ip = get_client_ip(request)
+        ActivityLog.objects.create(
+            type='product',
+            user='ADMIN',
+            action='Se elimino un producto',
+            entity_id=product.id,
+            ip_address=ip
+        )
         return Response({'message': 'Producto eliminado correctamente'}, status=status.HTTP_200_OK)
     except Product.DoesNotExist:
         return Response({'error': 'Producto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
@@ -278,6 +312,14 @@ def update_product(request, product_id):
     serializer = ProductSerializer(product, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
+        ip = get_client_ip(request)
+        ActivityLog.objects.create(
+            type='product',
+            user='ADMIN',
+            action='Se actualizó',
+            entity_id=product.id,
+            ip_address=ip
+        )
         return Response({'message': 'Producto actualizado correctamente', 'product': serializer.data}, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

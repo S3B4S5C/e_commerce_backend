@@ -121,8 +121,6 @@ def delete_payment_method(request, payment_id):
         return Response({'error': 'Método de pago no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
 
-
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def mis_ordenes(request):

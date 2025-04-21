@@ -5,6 +5,8 @@ from rest_framework import status
 from .serializers import UserAccountSerializer, UserProfileSerializer
 from .models import UserAccount
 from rest_framework.permissions import IsAuthenticated
+from logs.utils import get_client_ip
+from logs.models import ActivityLog
 
 
 # Create your views here.
@@ -22,7 +24,14 @@ def create_user(request):
         user.save(update_fields=['password'])  # Save the user with the hashed password
 
         refresh = RefreshToken.for_user(user)
-
+        ip = get_client_ip(request)
+        ActivityLog.objects.create(
+            type='user',
+            user=request.user,
+            action='Se registro un nuevo usuario',
+            entity_id=user.id,
+            ip_address=ip
+        )
         return Response({
             'user': {
                 'id': str(user.id),
