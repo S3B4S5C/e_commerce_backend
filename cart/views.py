@@ -7,7 +7,7 @@ from .models import Cart, CartItem
 from .serializers import CartSerializer, CartItemSerializer
 from products.models import Product
 from decimal import Decimal
-
+from products.serializers import ProductSerializer
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -140,7 +140,7 @@ def remove_product_from_cart(request):
 @permission_classes([IsAuthenticated])
 def view_cart(request):
     """
-    Muestra el contenido del carrito activo del usuario autenticado.
+    Retorna los productos en el carrito del usuario autenticado con su cantidad.
     """
     user = request.user
 
@@ -150,11 +150,15 @@ def view_cart(request):
         return Response({'error': 'No hay un carrito activo para este usuario.'},
                         status=status.HTTP_404_NOT_FOUND)
 
-    cart_data = CartSerializer(cart).data
-    cart_items = CartItem.objects.filter(cart=cart)
-    cart_items_data = CartItemSerializer(cart_items, many=True).data
+    cart_items = CartItem.objects.filter(cart=cart).select_related('product')
+    
+    # Retornar una lista de productos con cantidad
+    products_with_quantity = []
+    for item in cart_items:
+        product_data = ProductSerializer(item.product).data
+        product_data['quantity'] = item.quantity_product
+        products_with_quantity.append(product_data)
 
     return Response({
-        'cart': cart_data,
-        'items': cart_items_data
+        'products': products_with_quantity
     }, status=status.HTTP_200_OK)

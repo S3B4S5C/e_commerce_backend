@@ -40,7 +40,7 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey('products.Product', on_delete=models.CASCADE)
     quantity = models.IntegerField()
     created_at = models.DateTimeField()
@@ -48,7 +48,6 @@ class OrderItem(models.Model):
 
     class Meta:
         unique_together = ('order', 'product')
-
 
 class Invoice(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

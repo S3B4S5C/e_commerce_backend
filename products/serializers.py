@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Tag, ProductReview, Stock
+from .models import Product, Tag, ProductReview, Stock, Tagged
 from django.db.models import Sum
 
 
@@ -36,3 +36,30 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_total_stock(self, obj):
         total = Stock.objects.filter(product=obj).aggregate(total=Sum('quantity'))['total']
         return total or 0
+
+
+class ProductSerializer2(serializers.ModelSerializer):
+    tags = serializers.SerializerMethodField()
+    stock = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'category', 'price', 'photo', 'tags', 'stock']
+
+    def get_tags(self, obj):
+        tags = Tag.objects.filter(tagged__product=obj)
+        return [tag.name for tag in tags]
+
+    def get_stock(self, obj):
+        return Stock.objects.filter(product=obj).aggregate(total=Sum('quantity'))['total'] or 0
+
+
+class TagSerializer2(serializers.ModelSerializer):
+    productCount = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Tag
+        fields = ['id', 'name', 'productCount']
+
+    def get_productCount(self, obj):
+        return Tagged.objects.filter(tag=obj).count()
