@@ -11,7 +11,7 @@ from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.conf import settings
-
+from cart.models import Cart, CartItem
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -30,25 +30,24 @@ def create_order(request):
 @permission_classes([IsAuthenticated])
 def create_order_with_payment(request):
     user = request.user
-    data = request.data
-    items = data.get('items', [])
-    shipping_method_id = data.get('shipping_method_id')
-    total_price = 0
-    for item in items:
-        product_id = item.get('product_id')
-        quantity = item.get('quantity', 1)
-        try:
-            product = Product.objects.get(id=product_id)
-            total_price += product.price * quantity
-        except Product.DoesNotExist:
-            continue
+    shipping_method_id = request.data.get('shipping_method_id')
 
-    if not items:
-        return Response({'error': 'No hay productos en el pedido'}, status=400)
+    try:
+        cart = Cart.objects.get(user=user, deleted_at__isnull=True)
+    except Cart.DoesNotExist:
+        return Response({'error': 'No hay un carrito activo para este usuario.'}, status=404)
+
+    cart_items = CartItem.objects.filter(cart=cart)
+    if not cart_items.exists():
+        return Response({'error': 'El carrito está vacío.'}, status=400)
+
+    total_price = 0
+    for item in cart_items:
+        total_price += item.product.price * item.quantity_product
 
     try:
         payment_intent = stripe.PaymentIntent.create(
-            amount=int(float(total_price) * 100),  # Stripe trabaja en centavos
+            amount=int(float(total_price) * 100),  # Stripe espera centavos
             currency='usd',
             metadata={'integration_check': 'accept_a_payment', 'user_id': str(user.id)}
         )
@@ -63,13 +62,13 @@ def create_order_with_payment(request):
         modified_at=timezone.now()
     )
 
-    status = OrderStatus.objects.get(name='Pendiente')
+    status_obj = OrderStatus.objects.get(name='Pendiente')
 
     order = Order.objects.create(
         user=user,
         payment_detail=payment_detail,
         shipping_method_id=shipping_method_id,
-        status=status,
+        status=status_obj,
         date=timezone.now().date(),
         time=timezone.now().time(),
         total_price=total_price,
@@ -77,29 +76,24 @@ def create_order_with_payment(request):
         modified_at=timezone.now()
     )
 
-    # 4. Crear OrderItems
-    for item in items:
-        product_id = item.get('product_id')
-        quantity = item.get('quantity')
-        try:
-            product = Product.objects.get(id=product_id)
-        except Product.DoesNotExist:
-            continue
-
+    for item in cart_items:
         OrderItem.objects.create(
             order=order,
-            product=product,
-            quantity=quantity,
+            product=item.product,
+            quantity=item.quantity_product,
             created_at=timezone.now(),
             modified_at=timezone.now()
         )
 
-    # 5. Devolver el client_secret de Stripe para usar en el frontend
+    # Soft delete del carrito una vez que se genera la orden
+    cart.deleted_at = timezone.now()
+    cart.save()
+
     return Response({
-        'message': 'Pedido creado correctamente',
+        'message': 'Pedido creado correctamente desde el carrito',
         'order_id': order.id,
         'client_secret': payment_intent.client_secret
-    })
+    }, status=201)
 
 
 @api_view(['POST'])
@@ -126,6 +120,15 @@ def delete_payment_method(request, payment_id):
     except PaymentDetail.DoesNotExist:
         return Response({'error': 'Método de pago no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def mis_ordenes(request):
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    serializer = OrderSerializer(orders, many=True)
+    return Response(serializer.data)
 
 @api_view(['POST'])
 def confirmar_pago(request, payment_id):
