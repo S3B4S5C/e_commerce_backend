@@ -6,6 +6,7 @@ from .serializers import AddressSerializer
 from .models import AddressUser, Branch
 from django.utils import timezone
 from products.models import Product, Stock
+from logs.utils import get_client_ip
 from logs.models import ActivityLog
 from users.models import UserAccount
 
@@ -133,7 +134,7 @@ def update_stock(request):
 
     try:
         stock = Stock.objects.create(product_id=product_id, quantity=quantity)
-
+        ip = get_client_ip(request)
         # Asegura que user sea instancia de UserAccount
         user = request.user
         if not isinstance(user, UserAccount):
@@ -144,8 +145,9 @@ def update_stock(request):
             description=f'Se añadió stock de {quantity} para el producto con ID {product_id}',
             type='stock',
             entity_id=stock.id,
+            ip_address=ip
         )
 
         return Response({'message': 'Stock actualizado correctamente'}, status=200)
     except Exception as e:
-        return Response({'error': str(e)}, status=400)
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

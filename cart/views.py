@@ -8,6 +8,9 @@ from .serializers import CartSerializer, CartItemSerializer
 from products.models import Product
 from decimal import Decimal
 from products.serializers import ProductSerializer
+from logs.models import ActivityLog
+from logs.utils import get_client_ip
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -88,7 +91,6 @@ def add_product_to_cart(request):
     # Actualizar el total del carrito
     cart.total_price += Decimal(str(product.price)) * Decimal(str(quantity))
     cart.save()
-
     serializer = CartItemSerializer(cart_item)
     return Response({
         'message': 'Producto agregado al carrito exitosamente.',
@@ -151,7 +153,7 @@ def view_cart(request):
                         status=status.HTTP_404_NOT_FOUND)
 
     cart_items = CartItem.objects.filter(cart=cart).select_related('product')
-    
+
     # Retornar una lista de productos con cantidad
     products_with_quantity = []
     for item in cart_items:
