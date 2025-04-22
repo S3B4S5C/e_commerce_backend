@@ -6,7 +6,8 @@ from .serializers import AddressSerializer
 from .models import AddressUser, Branch
 from django.utils import timezone
 from products.models import Product, Stock
-
+from logs.models import ActivityLog
+from users.models import UserAccount
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -117,18 +118,34 @@ def stock_by_branch(request, product_id):
 
 
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def update_stock(request):
     product_id = request.data.get('product_id')
-    branch_id = request.data.get('branch_id')
     quantity = request.data.get('quantity')
 
-    if not product_id or not branch_id or quantity is None:
-        return Response({'error': 'Faltan parámetros (product_id, branch_id, quantity)'}, status=status.HTTP_400_BAD_REQUEST)
+    if not product_id or quantity is None:
+        return Response({'error': 'Faltan parámetros (product_id, quantity)'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        stock, created = Stock.objects.get_or_create(product_id=product_id, branch_id=branch_id)
-        stock.quantity = quantity
-        stock.save()
-        return Response({'message': 'Stock actualizado correctamente'}, status=status.HTTP_200_OK)
+        quantity = int(quantity)
+    except (ValueError, TypeError):
+        return Response({'error': 'Quantity debe ser un número válido'}, status=400)
+
+    try:
+        stock = Stock.objects.create(product_id=product_id, quantity=quantity)
+
+        # Asegura que user sea instancia de UserAccount
+        user = request.user
+        if not isinstance(user, UserAccount):
+            user = UserAccount.objects.get(id=user.id)
+
+        ActivityLog.objects.create(
+            user=user,
+            description=f'Se añadió stock de {quantity} para el producto con ID {product_id}',
+            type='stock',
+            entity_id=stock.id,
+        )
+
+        return Response({'message': 'Stock actualizado correctamente'}, status=200)
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': str(e)}, status=400)

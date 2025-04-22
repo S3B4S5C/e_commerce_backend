@@ -3,11 +3,11 @@ from .models import ActivityLog
 
 class ActivityLogSerializer(serializers.ModelSerializer):
     description = serializers.SerializerMethodField()
-    time = serializers.DateTimeField(source='timestamp')
+    time = serializers.DateTimeField()
 
     class Meta:
         model = ActivityLog
-        fields = ['id', 'table_affected', 'description', 'user', 'time']
+        fields = ['id', 'type', 'description', 'user', 'time']
 
     def get_description(self, obj):
-        return obj.action
+        return obj.description

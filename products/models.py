@@ -34,15 +34,11 @@ class Tagged(models.Model):
 
 
 class Stock(models.Model):
-    branch = models.ForeignKey('locations.Branch', on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ('branch', 'product')
-
 
 class ProductReview(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
