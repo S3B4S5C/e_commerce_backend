@@ -7,5 +7,6 @@ urlpatterns = [
     path('test-token', views.test_token, name='api-user-test-token'),
     path('requestProfile', views.query_profile, name='api-user-request-profile'),
     path('updateProfile', views.update_profile, name='api-user-update-profile'),
-    path('changePassword', views.change_password, name='api-user-change-password')
+    path('changePassword', views.change_password, name='api-user-change-password'),
+    path('notificate', views.get_notifications, name='get-notification')
 ]

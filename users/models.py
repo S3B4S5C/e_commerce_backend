@@ -40,3 +40,21 @@ class UserAccount(AbstractBaseUser):
 
     def __str__(self):
         return self.email
+
+
+class Notification(models.Model):
+    class NotificationType(models.TextChoices):
+        LOW_STOCK = 'LOW_STOCK', 'Stock mínimo'
+        NEW_PRODUCT = 'NEW_PRODUCT', 'Nuevo producto'
+        ORDER_ACCEPTED = 'ORDER_ACCEPTED', 'Pedido aceptado'
+        OTHER = 'OTHER', 'Otro'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='notifications')
+    type = models.CharField(max_length=30, choices=NotificationType.choices)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def _str_(self):
+        return f"{self.user.email} - {self.type}"

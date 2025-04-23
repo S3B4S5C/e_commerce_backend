@@ -2,8 +2,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
-from .serializers import UserAccountSerializer, UserProfileSerializer
-from .models import UserAccount
+from .serializers import UserAccountSerializer, UserProfileSerializer, NotificationSerializer
+from .models import UserAccount, Notification
 from rest_framework.permissions import IsAuthenticated
 from logs.utils import get_client_ip
 from logs.models import ActivityLog
@@ -127,3 +127,11 @@ def change_password(request):
     user.save()
 
     return Response({'message': 'Contraseña actualizada exitosamente.'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_notifications(request):
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    serializer = NotificationSerializer(notifications, many=True)
+    return Response(serializer.data)

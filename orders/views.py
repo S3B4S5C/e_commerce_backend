@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import OrderSerializer, PaymentDetailSerializer, ShippingMethodSerializer, OrderStatusSerializer
 import stripe
-from products.models import Product
+from products.models import Product, Stock
 from django.utils import timezone
 from .models import Order, PaymentDetail, OrderItem, OrderStatus, Invoice, ShippingMethod
 from datetime import datetime
@@ -12,6 +12,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.conf import settings
 from cart.models import Cart, CartItem
+from users.models import UserAccount, Notification
+
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -41,13 +43,25 @@ def create_order_with_payment(request):
     if not cart_items.exists():
         return Response({'error': 'El carrito está vacío.'}, status=400)
 
-    total_price = 0
+    # Validar stock suficiente
     for item in cart_items:
-        total_price += item.product.price * item.quantity_product
+        try:
+            stock = Stock.objects.get(product=item.product)
+        except Stock.DoesNotExist:
+            return Response({
+                'error': f'El producto "{item.product.name}" no tiene registro de stock.'
+            }, status=400)
+
+        if item.quantity_product > stock.quantity:
+            return Response({
+                'error': f'El producto "{item.product.name}" no tiene suficiente stock. Disponible: {stock.quantity}.'
+            }, status=400)
+
+    total_price = sum(item.product.price * item.quantity_product for item in cart_items)
 
     try:
         payment_intent = stripe.PaymentIntent.create(
-            amount=int(float(total_price) * 100),  # Stripe espera centavos
+            amount=int(float(total_price) * 100),
             currency='usd',
             metadata={'integration_check': 'accept_a_payment', 'user_id': str(user.id)}
         )
@@ -63,7 +77,6 @@ def create_order_with_payment(request):
     )
 
     status_obj = OrderStatus.objects.get(name='Pendiente')
-
     order = Order.objects.create(
         user=user,
         payment_detail=payment_detail,
@@ -76,6 +89,7 @@ def create_order_with_payment(request):
         modified_at=timezone.now()
     )
 
+    # Crear ítems del pedido y descontar stock
     for item in cart_items:
         OrderItem.objects.create(
             order=order,
@@ -85,7 +99,19 @@ def create_order_with_payment(request):
             modified_at=timezone.now()
         )
 
-    # Soft delete del carrito una vez que se genera la orden
+        stock = Stock.objects.get(product=item.product)
+        stock.quantity -= item.quantity_product
+        stock.save()
+
+        if stock.quantity < 5:
+            admins = UserAccount.objects.filter(role=UserAccount.RoleChoices.ADMIN, is_active=True)
+
+            for admin in admins:
+                Notification.objects.create(
+                    user=admin,
+                    type=Notification.NotificationType.LOW_STOCK,
+                    message=f'El stock del producto "{item.product.name}" ha bajado a {stock.quantity} unidades.',
+                )
     cart.deleted_at = timezone.now()
     cart.save()
 
@@ -127,6 +153,7 @@ def mis_ordenes(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
     serializer = OrderSerializer(orders, many=True)
     return Response(serializer.data)
+
 
 @api_view(['POST'])
 def confirmar_pago(request, payment_id):
