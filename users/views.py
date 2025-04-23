@@ -24,14 +24,6 @@ def create_user(request):
         user.save(update_fields=['password'])  # Save the user with the hashed password
 
         refresh = RefreshToken.for_user(user)
-        ip = get_client_ip(request)
-        ActivityLog.objects.create(
-            type='user',
-            user=request.user,
-            action='Se registro un nuevo usuario',
-            entity_id=user.id,
-            ip_address=ip
-        )
         return Response({
             'user': {
                 'id': str(user.id),

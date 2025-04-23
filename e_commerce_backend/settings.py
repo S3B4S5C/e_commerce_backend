@@ -23,6 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY')
+GROQ_API_KEY = config('GROQ_API_KEY')
 # SECURITY WARNING: keep the secret key used in production secret!
 
 SECRET_KEY = 'django-insecure-g-(w41ribbp-_=47(774umf(%$-n9o6#f)d=h!w^k30=&yj7+f'
@@ -61,6 +62,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django.contrib.sessions.middleware.SessionMiddleware',
 ]
 
 
@@ -171,6 +173,8 @@ CORS_ALLOW_METHODS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 CORS_ALLOW_HEADERS = [
     "accept",
