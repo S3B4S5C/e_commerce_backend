@@ -13,7 +13,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from logs.utils import get_client_ip
 from logs.models import ActivityLog
-
+from users.permisions import IsAdminRole
 
 @api_view(['POST'])
 def register_product(request):
@@ -377,14 +377,36 @@ def get_recommendations(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
+# No Sirve lol
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
+def update_product(request):
+    """
+    Actualiza los datos de un producto.
+    """
+    product_id = request.data.get('product').get('id')
+    print(request.data)
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        return Response({'error': 'Producto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ProductSerializer(product, data=request.data.get('product'), partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({'message': 'Producto actualizado correctamente', 'product': serializer.data}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET'])
-def get_recommendations_cart(request):
+@permission_classes([IsAuthenticated])
+def get_recommendations_cart(request, product_id):
     """
     Agrega un producto al carrito y devuelve recomendaciones basadas en IA colectiva.
     Espera: { "product_id": 123 }
     """
     user = request.user
-    product_id = request.data.get("product_id")
 
     if not product_id:
         return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -393,11 +415,6 @@ def get_recommendations_cart(request):
         product = Product.objects.get(id=product_id)
     except Product.DoesNotExist:
         return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    # Lógica para agregar al carrito (simplificada, ajustá si ya tenés lógica propia)
-    from cart.models import Cart, CartItem  # ajustá según tu estructura
-    cart, _ = Cart.objects.get_or_create(user=user)
-    CartItem.objects.update_or_create(cart=cart, product=product, defaults={"quantity": 1})
 
     # Obtener recomendaciones basadas en el producto
     recommended_ids = recommend_global_based_on_product(product.id)

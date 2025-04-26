@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path('', views.product_list, name='api-product-list'),
     path('registerProduct', views.register_product, name='api-product-register'),
+    path('updateProduct', views.update_product, name='api-product-update'),
     path('search', views.search_products, name='search-products'),
     path('searchProducts', views.search_product, name='search-products'),
     path('categories', views.get_product_categories, name='get-product-categories'),
@@ -22,6 +23,6 @@ urlpatterns = [
     path('favoritesmost', views.get_most_favorited_products, name='get-most_favorited-products'),
     path('randomproducts', views.get_random_product, name='get-random-products'),
     path('recommended', views.get_recommendations, name='get-recommendations'),
-    path('recommended_cart', views.get_recommendations_cart, name='get-recommended-cart'),
+    path('recommended_cart/<uuid:product_id>/', views.get_recommendations_cart, name='get-recommended-cart'),
     path('getProduct/<uuid:product_id>', views.get_product_by_id, name='get-product-id')
 ]

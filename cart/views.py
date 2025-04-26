@@ -106,15 +106,15 @@ def remove_product_from_cart(request):
     Elimina un producto específico del carrito del usuario autenticado.
     Requiere: cart_id, product_id
     """
-    cart_id = request.data.get('cart_id')
+    print(request.data)
     product_id = request.data.get('product_id')
 
-    if not cart_id or not product_id:
+    if  not product_id:
         return Response({'error': 'cart_id y product_id son obligatorios.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        cart = Cart.objects.get(id=cart_id, user=request.user, deleted_at__isnull=True)
+        cart = Cart.objects.get(user=request.user, deleted_at__isnull=True)
     except Cart.DoesNotExist:
         return Response({'error': 'Carrito no encontrado o eliminado.'},
                         status=status.HTTP_404_NOT_FOUND)

@@ -66,6 +66,12 @@ def login_user(request):
         if user.check_password(password):
             refresh = RefreshToken.for_user(user)
             return Response({
+                'user': {
+                    'id': str(user.id),
+                    'name': user.name,
+                    'email': user.email,
+                    'role'  : user.role
+                },
                 'res': 'Inicio de sesión exitoso',
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),

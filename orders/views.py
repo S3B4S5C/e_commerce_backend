@@ -13,7 +13,7 @@ from django.http import JsonResponse
 from django.conf import settings
 from cart.models import Cart, CartItem
 from users.models import UserAccount, Notification
-
+from django.db.models import Sum
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -45,18 +45,18 @@ def create_order_with_payment(request):
 
     # Validar stock suficiente
     for item in cart_items:
-        try:
-            stock = Stock.objects.get(product=item.product)
-        except Stock.DoesNotExist:
+        total_stock = Stock.objects.filter(product=item.product).aggregate(total=Sum('quantity'))['total']
+
+        if total_stock is None or total_stock <= 0:
             return Response({
-                'error': f'El producto "{item.product.name}" no tiene registro de stock.'
+                'error': f'El producto "{item.product.name}" no tiene stock disponible.'
             }, status=400)
 
-        if item.quantity_product > stock.quantity:
+        if item.quantity_product > total_stock:
             return Response({
-                'error': f'El producto "{item.product.name}" no tiene suficiente stock. Disponible: {stock.quantity}.'
+                'error': f'El producto "{item.product.name}" no tiene suficiente stock. Disponible: {total_stock}.'
             }, status=400)
-
+            
     total_price = sum(item.product.price * item.quantity_product for item in cart_items)
 
     try:
@@ -99,18 +99,20 @@ def create_order_with_payment(request):
             modified_at=timezone.now()
         )
 
-        stock = Stock.objects.get(product=item.product)
-        stock.quantity -= item.quantity_product
-        stock.save()
-
-        if stock.quantity < 5:
+        Stock.objects.create(
+        product=item.product,
+        quantity=-item.quantity_product
+        )
+        total_stock = Stock.objects.filter(product=item.product).aggregate(total=Sum('quantity'))['total'] or 0
+        
+        if total_stock < 5:
             admins = UserAccount.objects.filter(role=UserAccount.RoleChoices.ADMIN, is_active=True)
 
             for admin in admins:
                 Notification.objects.create(
                     user=admin,
                     type=Notification.NotificationType.LOW_STOCK,
-                    message=f'El stock del producto "{item.product.name}" ha bajado a {stock.quantity} unidades.',
+                    message=f'El stock del producto "{item.product.name}" ha bajado a {total_stock} unidades.',
                 )
     cart.deleted_at = timezone.now()
     cart.save()

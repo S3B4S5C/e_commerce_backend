@@ -12,7 +12,7 @@ from django.conf import settings
 
 class VoiceAssistantView(APIView):
     permission_classes = [IsAuthenticated]
-
+    intents = ["buscar", "agregar", "ver_carrito", "realizar_pedido"]
     def post(self, request):
         user_input = request.data.get("text", "")
         user_email = request.user
@@ -22,18 +22,22 @@ class VoiceAssistantView(APIView):
             return Response({'error': 'Usuario no encontrado'}, status=404)
 
         user_id = user.id
-        session = request.session
+        session = request.session 
+        print(session) # log
         confirm = user_input in ["sí", "si", "confirmar", "ok", "dale", "hazlo"]
+        print(confirm) # log
         if session.get("pending_intent") and confirm:
             intent = session.pop("pending_intent")
             data = session.pop("pending_data", None)
             session.modified = True
+            print(f"Intent: {intent}, Data: {data}") # log
         else:
             groq_response = self.ask_groq(user_input)
             intent, data = self.parse_intent(groq_response)
+            print(f"elseIntent: {intent}, Data: {data}") # log
 
         # Si la intención requiere confirmación
-        if intent in ["buscar", "agregar", "realizar_pedido"]:
+        if intent in ["buscar", "agregar", "realizar_pedido"] and not confirm:
             session["pending_intent"] = intent
             session["pending_data"] = data
             session.modified = True
@@ -118,6 +122,24 @@ class VoiceAssistantView(APIView):
         return Response({"result": "No entendí tu solicitud."})
 
     def ask_groq(self, text):
+        intents = ["buscar", "agregar", "ver_carrito", "realizar_pedido"]  # <- debes colocarla aquí
+
+        prompt = (
+            "Sos un asistente de compras para un e-commerce.\n"
+            "Solo podés responder con una intención válida de esta lista:\n"
+            f"{', '.join(intents)}\n\n"
+            "**Formato obligatorio:** `intención:parámetro`\n"
+            "Ejemplos válidos:\n"
+            "- buscar:auriculares\n"
+            "- agregar:Smart TV\n"
+            "- ver_carrito\n"
+            "- realizar_pedido\n\n"
+            "**Reglas:**\n"
+            "- No agregues ningún texto adicional.\n"
+            "- Si la intención no necesita parámetro (como 'ver_carrito' o 'realizar_pedido'), igual responde en el formato pero sin parámetro: `ver_carrito`\n"
+            "- NO inventes nuevas intenciones. Solo usá las de la lista.\n"
+        )
+
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers={
@@ -127,15 +149,15 @@ class VoiceAssistantView(APIView):
             json={
                 "model": "llama3-8b-8192",
                 "messages": [
-                    {"role": "system", "content": "Sos un asistente de compras, devolvé solo la intención y parámetro en formato: buscar:auriculares o agregar:laptop o ver_carrito o realizar_pedido"},
+                    {"role": "system", "content": prompt},
                     {"role": "user", "content": text}
                 ]
             }
         )
-        print(settings.GROQ_API_KEY)
-        print(response.status_code)
-        print(response.text)
+
+        
         content = response.json()["choices"][0]["message"]["content"]
+        print(content)
         return content
 
     def parse_intent(self, text):
