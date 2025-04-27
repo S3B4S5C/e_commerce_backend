@@ -10,11 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='activitylog',
-            name='ip_address',
-            field=models.GenericIPAddressField(blank=True, null=True),
-        ),
         migrations.AlterField(
             model_name='activitylog',
             name='type',
