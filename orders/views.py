@@ -56,7 +56,7 @@ def create_order_with_payment(request):
             return Response({
                 'error': f'El producto "{item.product.name}" no tiene suficiente stock. Disponible: {total_stock}.'
             }, status=400)
-            
+
     total_price = sum(item.product.price * item.quantity_product for item in cart_items)
 
     try:
@@ -100,11 +100,10 @@ def create_order_with_payment(request):
         )
 
         Stock.objects.create(
-        product=item.product,
-        quantity=-item.quantity_product
+            product=item.product, quantity=-item.quantity_product
         )
         total_stock = Stock.objects.filter(product=item.product).aggregate(total=Sum('quantity'))['total'] or 0
-        
+
         if total_stock < 5:
             admins = UserAccount.objects.filter(role=UserAccount.RoleChoices.ADMIN, is_active=True)
 

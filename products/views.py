@@ -15,6 +15,7 @@ from logs.utils import get_client_ip
 from logs.models import ActivityLog
 from users.permisions import IsAdminRole
 
+
 @api_view(['POST'])
 def register_product(request):
     """
@@ -379,9 +380,6 @@ def get_recommendations(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
-# No Sirve lol
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_recommendations_cart(request, product_id):
@@ -389,7 +387,6 @@ def get_recommendations_cart(request, product_id):
     Agrega un producto al carrito y devuelve recomendaciones basadas en IA colectiva.
     Espera: { "product_id": 123 }
     """
-    user = request.user
 
     if not product_id:
         return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)

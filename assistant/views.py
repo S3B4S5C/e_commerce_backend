@@ -13,6 +13,7 @@ from django.conf import settings
 class VoiceAssistantView(APIView):
     permission_classes = [IsAuthenticated]
     intents = ["buscar", "agregar", "ver_carrito", "realizar_pedido"]
+
     def post(self, request):
         user_input = request.data.get("text", "")
         user_email = request.user
