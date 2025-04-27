@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -27,9 +28,9 @@ def get(request):
         }
         for i, c in enumerate(categories)
     ]
-    return Response({
+    return JsonResponse({
         'products': ProductSerializer2(products, many=True).data,
         'tags': TagSerializer2(tags, many=True).data,
         'categories': categories_data,
         'activities': ActivityLogSerializer(activities, many=True).data,
-    })
+    }, json_dumps_params={'ensure_ascii': False})

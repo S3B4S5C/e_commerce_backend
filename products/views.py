@@ -306,6 +306,8 @@ def update_product(request, product_id):
     """
     try:
         product = Product.objects.get(id=product_id)
+        print(product)
+        print(request.data)
     except Product.DoesNotExist:
         return Response({'error': 'Producto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -379,25 +381,6 @@ def get_recommendations(request):
 
 
 # No Sirve lol
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-@permission_classes([IsAdminRole])
-def update_product(request):
-    """
-    Actualiza los datos de un producto.
-    """
-    product_id = request.data.get('product').get('id')
-    print(request.data)
-    try:
-        product = Product.objects.get(id=product_id)
-    except Product.DoesNotExist:
-        return Response({'error': 'Producto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = ProductSerializer(product, data=request.data.get('product'), partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        return Response({'message': 'Producto actualizado correctamente', 'product': serializer.data}, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

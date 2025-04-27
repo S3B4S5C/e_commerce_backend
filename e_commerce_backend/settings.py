@@ -160,7 +160,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 CORS_ALLOW_METHODS = [
@@ -187,3 +187,5 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
 ]
+
+DEFAULT_CHARSET = 'utf-8'
