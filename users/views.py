@@ -7,6 +7,7 @@ from .models import UserAccount, Notification
 from rest_framework.permissions import IsAuthenticated
 from logs.utils import get_client_ip
 from logs.models import ActivityLog
+from firebase_admin import messaging
 
 
 # Create your views here.
@@ -53,7 +54,7 @@ def test_token(request):
 def login_user(request):
     email = request.data.get('email')
     password = request.data.get('password')
-
+    token = request.data.get('fcm_token')
     print(f"Email recibido: {email}")
     print(f"Password recibido: {password}")
 
@@ -64,13 +65,21 @@ def login_user(request):
         print(f"check_password result: {user.check_password(password)}")
 
         if user.check_password(password):
+            if token:
+                if user.fcm_token != token:
+                    print(f"Actualizando fcm_token de {user.email}")
+                    user.fcm_token = token
+                    user.save(update_fields=['fcm_token'])
+                else:
+                    print("El fcm_token recibido es igual al existente. No se actualiza.")
+
             refresh = RefreshToken.for_user(user)
             return Response({
                 'user': {
                     'id': str(user.id),
                     'name': user.name,
                     'email': user.email,
-                    'role'  : user.role
+                    'role': user.role
                 },
                 'res': 'Inicio de sesión exitoso',
                 'refresh': str(refresh),
@@ -141,3 +150,19 @@ def get_notifications(request):
     notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
     serializer = NotificationSerializer(notifications, many=True)
     return Response(serializer.data)
+
+
+def send_multicast_notification(tokens, title, body, data=None):
+    if not tokens:
+        raise ValueError("La lista de tokens está vacía.")
+
+    message = messaging.MulticastMessage(
+        notification=messaging.Notification(
+            title=title,
+            body=body
+        ),
+        tokens=tokens,
+        data=data or {}
+    )
+    response = messaging.send_multicast(message)
+    return response

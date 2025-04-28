@@ -1,10 +1,11 @@
+from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from products.models import Product, Tag
 from .models import ActivityLog
 from .serializers import ActivityLogSerializer
-from products.serializers import ProductSerializer2, TagSerializer2
+from products.serializers import ProductSerializer, TagSerializer2
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from users.permisions import IsAdminRole
@@ -27,9 +28,9 @@ def get(request):
         }
         for i, c in enumerate(categories)
     ]
-    return Response({
-        'products': ProductSerializer2(products, many=True).data,
+    return JsonResponse({
+        'products': ProductSerializer(products, many=True).data,
         'tags': TagSerializer2(tags, many=True).data,
         'categories': categories_data,
         'activities': ActivityLogSerializer(activities, many=True).data,
-    })
+    }, json_dumps_params={'ensure_ascii': False})

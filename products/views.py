@@ -14,6 +14,9 @@ from django.views.decorators.csrf import csrf_exempt
 from logs.utils import get_client_ip
 from logs.models import ActivityLog
 from users.permisions import IsAdminRole
+from users.views import send_multicast_notification
+from users.models import UserAccount
+from users.views import send_multicast_notification
 
 
 @api_view(['POST'])
@@ -21,6 +24,7 @@ def register_product(request):
     """
     Crea un nuevo producto
     """
+
     serializer = ProductSerializer(data=request.data)
     if serializer.is_valid():
         product = serializer.save()
@@ -32,6 +36,18 @@ def register_product(request):
             entity_id=product.id,
             ip_address=ip
         )
+        users_with_token = UserAccount.objects.filter(fcm_token__isnull=False).exclude(fcm_token='')
+        print(users_with_token)
+        tokens = users_with_token.values_list('fcm_token', flat=True)
+
+        try:
+            send_multicast_notification(
+                list(tokens),
+                title="¡Nuevo producto disponible!",
+                body=f'Ahora puedes ver "{product.name}" en el catálogo.',
+            )
+        except Exception as e:
+            print(f"Error enviando push a {users_with_token}: {e}")
         return Response({
             'message': 'Producto creado correctamente',
             'product': ProductSerializer(product).data
@@ -307,6 +323,8 @@ def update_product(request, product_id):
     """
     try:
         product = Product.objects.get(id=product_id)
+        print(product)
+        print(request.data)
     except Product.DoesNotExist:
         return Response({'error': 'Producto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 

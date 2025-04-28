@@ -121,6 +121,7 @@ def stock_by_branch(request, product_id):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_stock(request):
+    print(request.data)
     product_id = request.data.get('product_id')
     quantity = request.data.get('quantity')
 
