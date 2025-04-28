@@ -10,6 +10,7 @@ from decimal import Decimal
 from products.serializers import ProductSerializer
 from logs.models import ActivityLog
 from logs.utils import get_client_ip
+from products.views import recommend_global_based_on_product, recommend_products
 
 
 @api_view(['POST'])
@@ -91,11 +92,21 @@ def add_product_to_cart(request):
     # Actualizar el total del carrito
     cart.total_price += Decimal(str(product.price)) * Decimal(str(quantity))
     cart.save()
+
     serializer = CartItemSerializer(cart_item)
+    recommended_ids = recommend_global_based_on_product(str(product.id))
+
+    # Si no hay co-ocurrencias, recomendar los productos más populares
+    if not recommended_ids:
+        recommended_ids = recommend_products()
+
+    recommended_products = Product.objects.filter(id__in=recommended_ids)
+    recommended_serializer = ProductSerializer(recommended_products, many=True)
     return Response({
         'message': 'Producto agregado al carrito exitosamente.',
         'item': serializer.data,
-        'cart_id': cart.id
+        'cart_id': cart.id,
+        'recommended_products': recommended_serializer.data
     }, status=status.HTTP_200_OK)
 
 

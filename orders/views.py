@@ -14,6 +14,8 @@ from django.conf import settings
 from cart.models import Cart, CartItem
 from users.models import UserAccount, Notification
 from django.db.models import Sum
+from users.views import send_multicast_notification
+
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -113,6 +115,19 @@ def create_order_with_payment(request):
                     type=Notification.NotificationType.LOW_STOCK,
                     message=f'El stock del producto "{item.product.name}" ha bajado a {total_stock} unidades.',
                 )
+                if admin.fcm_token:
+                    try:
+                        send_multicast_notification(
+                            token=admin.fcm_token,
+                            title="¡Stock bajo!",
+                            body=f'El stock de "{item.product.name}" es ahora de {total_stock} unidades.',
+                            data={
+                                'product_id': str(item.product.id),
+                                'type': 'low_stock'
+                            }
+                        )
+                    except Exception as e:
+                        print(f'Error enviando notificación push: {e}')
     cart.deleted_at = timezone.now()
     cart.save()
 

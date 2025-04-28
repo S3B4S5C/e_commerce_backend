@@ -26,6 +26,7 @@ class UserAccount(AbstractBaseUser):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
+    fcm_token = models.CharField(max_length=255, null=True)
     role = models.CharField(
         max_length=10,
         choices=RoleChoices.choices,
