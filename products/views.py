@@ -27,8 +27,8 @@ def register_product(request):
         ip = get_client_ip(request)
         ActivityLog.objects.create(
             type='product',
-            user='ADMIN',
-            action='Se agrego un nuevo producto',
+            user=request.user,
+            description='Se agrego un nuevo producto',
             entity_id=product.id,
             ip_address=ip
         )
@@ -230,8 +230,8 @@ def associate_tag_to_product(request):
             ip = get_client_ip(request)
             ActivityLog.objects.create(
                 type='tag',
-                user='ADMIN',
-                action='Se agrego un tag a un producto',
+                user=request.user,
+                description='Se agrego un tag a un producto',
                 entity_id=product.id,
                 ip_address=ip
                 )
@@ -258,8 +258,8 @@ def remove_tag_from_product(request):
         ip = get_client_ip(request)
         ActivityLog.objects.create(
             type='tag',
-            user='ADMIN',
-            action='Se agrego un tag a un producto',
+            user=request.user,
+            description='Se agrego un tag a un producto',
             entity_id=tag_id.id,
             ip_address=ip
                 )
@@ -290,8 +290,8 @@ def delete_product(request, product_id):
         ip = get_client_ip(request)
         ActivityLog.objects.create(
             type='product',
-            user='ADMIN',
-            action='Se elimino un producto',
+            user=request.user,
+            description='Se elimino un producto',
             entity_id=product.id,
             ip_address=ip
         )
@@ -318,8 +318,8 @@ def update_product(request, product_id):
         ip = get_client_ip(request)
         ActivityLog.objects.create(
             type='product',
-            user='ADMIN',
-            action='Se actualizó',
+            user=request.user,
+            description='Se actualizó',
             entity_id=product.id,
             ip_address=ip
         )
