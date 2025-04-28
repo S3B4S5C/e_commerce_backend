@@ -105,7 +105,8 @@ def add_product_to_cart(request):
     return Response({
         'message': 'Producto agregado al carrito exitosamente.',
         'item': serializer.data,
-        'cart_id': cart.id
+        'cart_id': cart.id,
+        'recommended_products': recommended_serializer.data
     }, status=status.HTTP_200_OK)
 
 
