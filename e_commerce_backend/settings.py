@@ -13,12 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
-import firebase_admin
-from firebase_admin import credentials
 
-if not firebase_admin._apps:
-    cred = credentials.Certificate('e-commerce.json')
-    firebase_admin.initialize_app(cred)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -100,7 +95,7 @@ DATABASES = {
         'NAME': config('DB_NAME', default='e_commerce_db'),
         'USER': config('DB_USER', default='postgres'),
         'PASSWORD': config('DB_PASSWORD', default='1509'),
-        'HOST': config('DB_HOST', default='localhost'),
+        'HOST': 'localhost',
         'PORT': config('DB_PORT', default='5432'),
     }
 }

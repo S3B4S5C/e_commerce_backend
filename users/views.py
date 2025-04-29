@@ -8,7 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from logs.utils import get_client_ip
 from logs.models import ActivityLog
 from firebase_admin import messaging
-
+import firebase_admin
+from firebase_admin import credentials
 
 # Create your views here.
 @api_view(['POST'])
@@ -152,17 +153,29 @@ def get_notifications(request):
     return Response(serializer.data)
 
 
-def send_multicast_notification(tokens, title, body, data=None):
+from firebase_admin import messaging
+
+def send_multicast_notification(tokens, title, body, data=None):   
+    if not firebase_admin._apps:
+        cred = credentials.Certificate("e-commerce.json")
+        firebase_admin.initialize_app(cred)
     if not tokens:
         raise ValueError("La lista de tokens está vacía.")
 
-    message = messaging.MulticastMessage(
-        notification=messaging.Notification(
-            title=title,
-            body=body
-        ),
-        tokens=tokens,
-        data=data or {}
-    )
-    response = messaging.send_multicast(message)
-    return response
+    print("Tokens a enviar:", tokens)
+    try:
+        for token in tokens:
+            individual_message = messaging.Message(
+                notification=messaging.Notification(
+                    title=title,
+                    body=body,
+                ),
+                token=token,
+                data=data or {}
+            )
+            response = messaging.send(individual_message)
+            print(f"Push enviado correctamente a {token}. Response: {response}")
+        return response
+    except Exception as e:
+        print(f"Error enviando push a {tokens}: {e}")
+        return None
