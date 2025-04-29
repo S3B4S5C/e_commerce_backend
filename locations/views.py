@@ -10,6 +10,7 @@ from logs.utils import get_client_ip
 from logs.models import ActivityLog
 from users.models import UserAccount
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def register_address(request):

@@ -49,6 +49,7 @@ class OrderItem(models.Model):
     class Meta:
         unique_together = ('order', 'product')
 
+
 class Invoice(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)

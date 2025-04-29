@@ -34,7 +34,7 @@ def create_order(request):
 @permission_classes([IsAuthenticated])
 def create_order_with_payment(request):
     user = request.user
-    shipping_method_id = request.data.get('shipping_method_id')
+    shipping_method_id = request.data.get('shipping_method')
 
     try:
         cart = Cart.objects.get(user=user, deleted_at__isnull=True)
@@ -136,31 +136,6 @@ def create_order_with_payment(request):
         'order_id': order.id,
         'client_secret': payment_intent.client_secret
     }, status=201)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def add_payment_method(request):
-    data = request.data.copy()
-    data['created_at'] = datetime.now()
-    data['modified_at'] = datetime.now()
-
-    serializer = PaymentDetailSerializer(data=data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response({'message': 'Método de pago agregado', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_payment_method(request, payment_id):
-    try:
-        payment = PaymentDetail.objects.get(id=payment_id)
-        payment.delete()
-        return Response({'message': 'Método de pago eliminado'}, status=status.HTTP_200_OK)
-    except PaymentDetail.DoesNotExist:
-        return Response({'error': 'Método de pago no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['GET'])

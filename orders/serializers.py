@@ -56,13 +56,6 @@ class StripePaymentSerializer(serializers.Serializer):
     payment_method_id = serializers.CharField()
 
 
-class PaymentDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PaymentDetail
-        fields = '__all__'
-        read_only_fields = ['id']
-
-
 class ShippingMethodSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingMethod
@@ -72,4 +65,4 @@ class ShippingMethodSerializer(serializers.ModelSerializer):
 class OrderStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderStatus
-        fields = ['id']
+        fields = '__all__'

@@ -5,6 +5,7 @@ import uuid
 
 class PaymentMethod(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey('users.UserAccount', on_delete=models.CASCADE, null=True)
     type = models.CharField(max_length=50)
     number = models.CharField(max_length=19)
     expire_date = models.DateField()
