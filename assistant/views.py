@@ -96,10 +96,9 @@ class VoiceAssistantView(APIView):
         return Response({"result": "No entendí tu solicitud."})
 
     def ask_groq(self, text):
-        intents = ["buscar", "agregar", "ver_carrito", "realizar_pedido"]  # <- debes colocarla aquí
 
         prompt = (
-            "Sos un asistente de voz para un e-commerce.\n"
+            "Sos un asistente de voz para un e-commerce de productos electrónicos.\n"
             "Tu tarea es identificar la intención del usuario en base a su mensaje.\n"
             "Solo podés responder con una de las siguientes intenciones válidas:\n"
             "- buscar\n"
@@ -110,15 +109,27 @@ class VoiceAssistantView(APIView):
             "Solo devolvé la intención y, si corresponde, el parámetro, separados por dos puntos, sin texto adicional.\n\n"
             "**Ejemplos válidos:**\n"
             "- buscar:auriculares\n"
+            "- buscar:laptops\n"
             "- agregar:Smart TV\n"
             "- ver_carrito\n"
             "- realizar_pedido\n\n"
+            "**Categorías válidas para búsquedas (aceptá variantes o errores comunes):**\n"
+            "smartphones (smartphone, smarphone, celular, móviles)\n"
+            "laptops (latop, portátil, notebook)\n"
+            "audio (audífonos, auriculares, sonido)\n"
+            "wearables (reloj inteligente, smartwatch, pulsera)\n"
+            "fotografia (cámara, camara, fotos)\n"
+            "accesorios (cables, fundas, cargadores)\n"
+            "smartHome (hogar inteligente, domótica, smart home)\n"
+            "gaming (videojuegos, consola, gamer)\n\n"
             "**Reglas estrictas:**\n"
             "- NO expliques nada.\n"
             "- NO devuelvas texto adicional.\n"
             "- NO uses comillas.\n"
             "- NO inventes nuevas intenciones.\n"
             "- Si la intención no requiere parámetro (como 'ver_carrito' o 'realizar_pedido'), solo devolvé la intención.\n"
+            "- Si el mensaje tiene un error tipográfico leve o sinónimos comunes, corregilo o interpretalo de forma razonable.\n"
+            "- Si el mensaje es ambiguo, asumí que la intención es 'buscar'.\n"
         )
 
         response = requests.post(
