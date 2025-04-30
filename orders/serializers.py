@@ -13,7 +13,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class PaymentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentDetail
-        fields = ['state', 'provider']
+        fields = '__all__'
 
 
 class OrderSerializer(serializers.ModelSerializer):
