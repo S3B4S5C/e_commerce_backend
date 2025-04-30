@@ -4,6 +4,8 @@ from rest_framework import status
 from .serializers import CouponSerializer, CouponUserSerializer, PaymentMethodSerializer
 from rest_framework.permissions import IsAuthenticated
 from .models import CouponUser, Coupon, PaymentMethod
+from users.views import add_notifications
+from users.permisions import IsAdminRole
 
 
 @api_view(['POST'])
@@ -35,6 +37,8 @@ def delete_payment_method(request, method_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def create_coupon(request):
     """
     Crea un nuevo cupón.
@@ -48,6 +52,8 @@ def create_coupon(request):
 
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def delete_coupon(request, coupon_id):
     """
     Elimina un cupón por su ID.
@@ -61,6 +67,8 @@ def delete_coupon(request, coupon_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def add_coupon_to_user(request):
     """
     Asigna un cupón al usuario autenticado.
@@ -72,6 +80,7 @@ def add_coupon_to_user(request):
 
     try:
         coupon = Coupon.objects.get(id=coupon_id)
+        add_notifications('¡NUEVO CUPÓN', 'Pide tus productos favoritos', 'OTHER', 'CLIENT')
     except Coupon.DoesNotExist:
         return Response({'error': 'Cupón no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -86,6 +95,8 @@ def add_coupon_to_user(request):
 
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def remove_coupon_from_user(request):
     """
     Elimina un cupón específico del usuario autenticado.

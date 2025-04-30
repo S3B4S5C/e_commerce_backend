@@ -4,7 +4,6 @@ from . import views
 urlpatterns = [
     path('payment', views.create_order_with_payment, name='stripe-payment'),
     path('confirm-payment/<str:payment_id>/', views.confirmar_pago, name='confirm_payment'),
-    path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
     path('shipping/create', views.create_shipping_method, name='create_shipping_method'),
     path('shipping/delete/<uuid:method_id>', views.delete_shipping_method, name='delete_shipping_method'),
     path('shipping/list', views.list_shipping_methods, name='list_shipping_methods'),

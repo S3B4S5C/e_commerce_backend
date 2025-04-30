@@ -13,6 +13,7 @@ from users.permisions import IsAdminRole
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def get(request):
     products = Product.objects.filter(deleted_at__isnull=True)
     tags = Tag.objects.all()

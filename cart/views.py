@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from users.permisions import IsAdminRole
 from django.utils import timezone
 from .models import Cart, CartItem
 from .serializers import CartSerializer, CartItemSerializer
@@ -15,6 +16,7 @@ from products.views import recommend_global_based_on_product, recommend_products
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def create_cart(request):
     """
     Crea un nuevo carrito para el usuario autenticado.
@@ -35,6 +37,7 @@ def create_cart(request):
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def delete_cart(request, cart_id):
     """
     Elimina (lógicamente) un carrito del usuario autenticado.
@@ -120,7 +123,7 @@ def remove_product_from_cart(request):
     print(request.data)
     product_id = request.data.get('product_id')
 
-    if  not product_id:
+    if not product_id:
         return Response({'error': 'cart_id y product_id son obligatorios.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
