@@ -17,6 +17,9 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+print("DB_HOST:", config('DB_HOST', default='localhost'))
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -155,10 +158,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "http://127.0.0.1:4200",
-    "http://localhost:4200",
-]
+CORS_ALLOWED_ORIGINS = ['https://localhost', 'https://127.0.0.1', "https://e-commerce-parcial.web.app"]
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -189,3 +189,9 @@ CORS_ALLOW_HEADERS = [
 ]
 
 DEFAULT_CHARSET = 'utf-8'
+
+ALLOWED_HOSTS = [
+    'e-commerce-api-723647465950.southamerica-west1.run.app',
+    'localhost',
+    '.run.app'
+]
