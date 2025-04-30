@@ -20,45 +20,15 @@ class VoiceAssistantView(APIView):
         try:
             user = UserAccount.objects.get(email=user_email)
         except UserAccount.DoesNotExist:
-            return Response({'error': 'Usuario no encontrado'}, status=404)
+            return Response({'result': 'Usuario no encontrado'}, status=404)
 
         user_id = user.id
-        session = request.session 
-        print(session) # log
-        confirm = user_input in ["sí", "si", "confirmar", "ok", "dale", "hazlo"]
-        print(confirm) # log
-        if session.get("pending_intent") and confirm:
-            intent = session.pop("pending_intent")
-            data = session.pop("pending_data", None)
-            session.modified = True
-            print(f"Intent: {intent}, Data: {data}") # log
-        else:
-            groq_response = self.ask_groq(user_input)
-            intent, data = self.parse_intent(groq_response)
-            print(f"elseIntent: {intent}, Data: {data}") # log
 
-        # Si la intención requiere confirmación
-        if intent in ["buscar", "agregar", "realizar_pedido"] and not confirm:
-            session["pending_intent"] = intent
-            session["pending_data"] = data
-            session.modified = True
-            mensajes = {
-                "buscar": f"¿Querés que busque productos relacionados con '{data}'?",
-                "agregar": f"¿Querés que agregue '{data}' al carrito?",
-                "realizar_pedido": "¿Querés que procese tu pedido ahora?"
-            }
-            return Response({"result": mensajes[intent]})
+        groq_response = self.ask_groq(user_input)
+        intent, data = self.parse_intent(groq_response)
 
         if intent == "buscar":
-            productos = Product.objects.filter(
-                name__icontains=data or "",
-            ) | Product.objects.filter(
-                category__icontains=data or "",
-            ) | Product.objects.filter(
-                brand__icontains=data or ""
-            )
-            productos_serializados = [{"name": p.name, "price": p.price, "category": p.category, "brand": p.brand} for p in productos]
-            return Response({"result": productos_serializados})
+            return Response({"result": f"Buscando productos relacionados con '{data}'."})
 
         elif intent == "agregar":
             producto = Product.objects.filter(name__icontains=data).first()
@@ -71,22 +41,25 @@ class VoiceAssistantView(APIView):
             item.save()
             cart.total_price += producto.price
             cart.save()
-            return Response({"result": f"Agregado {producto.name} al carrito."})
+            return Response({"result": f"Se agregó '{producto.name}' al carrito."})
 
         elif intent == "ver_carrito":
             cart = Cart.objects.filter(user_id=user_id, deleted_at__isnull=True).first()
             if not cart:
                 return Response({"result": "Tu carrito está vacío."})
             items = CartItem.objects.filter(cart=cart)
-            productos = [{"producto": i.product.name, "cantidad": i.quantity_product} for i in items]
-            return Response({"result": productos})
+            if not items:
+                return Response({"result": "Tu carrito está vacío."})
+            resumen = ", ".join([f"{i.quantity_product} x {i.product.name}" for i in items])
+            return Response({"result": f"Tu carrito contiene: {resumen}."})
 
         elif intent == "realizar_pedido":
             cart = Cart.objects.filter(user_id=user_id, deleted_at__isnull=True).first()
             if not cart:
                 return Response({"result": "No hay carrito para procesar."})
-            user = UserAccount.objects.get(id=user_id)
             items = CartItem.objects.filter(cart=cart)
+            if not items:
+                return Response({"result": "Tu carrito está vacío."})
 
             payment = PaymentDetail.objects.create(
                 state="pagado", provider="manual", created_at=timezone.now(), modified_at=timezone.now()
@@ -118,7 +91,7 @@ class VoiceAssistantView(APIView):
             cart.deleted_at = timezone.now()
             cart.save()
 
-            return Response({"result": f"Pedido realizado por un total de ${order.total_price}."})
+            return Response({"result": f"Tu pedido fue realizado correctamente por un total de ${order.total_price}."})
 
         return Response({"result": "No entendí tu solicitud."})
 
@@ -126,19 +99,26 @@ class VoiceAssistantView(APIView):
         intents = ["buscar", "agregar", "ver_carrito", "realizar_pedido"]  # <- debes colocarla aquí
 
         prompt = (
-            "Sos un asistente de compras para un e-commerce.\n"
-            "Solo podés responder con una intención válida de esta lista:\n"
-            f"{', '.join(intents)}\n\n"
-            "**Formato obligatorio:** `intención:parámetro`\n"
-            "Ejemplos válidos:\n"
+            "Sos un asistente de voz para un e-commerce.\n"
+            "Tu tarea es identificar la intención del usuario en base a su mensaje.\n"
+            "Solo podés responder con una de las siguientes intenciones válidas:\n"
+            "- buscar\n"
+            "- agregar\n"
+            "- ver_carrito\n"
+            "- realizar_pedido\n\n"
+            "**Formato de respuesta obligatorio:**\n"
+            "Solo devolvé la intención y, si corresponde, el parámetro, separados por dos puntos, sin texto adicional.\n\n"
+            "**Ejemplos válidos:**\n"
             "- buscar:auriculares\n"
             "- agregar:Smart TV\n"
             "- ver_carrito\n"
             "- realizar_pedido\n\n"
-            "**Reglas:**\n"
-            "- No agregues ningún texto adicional.\n"
-            "- Si la intención no necesita parámetro (como 'ver_carrito' o 'realizar_pedido'), igual responde en el formato pero sin parámetro: `ver_carrito`\n"
-            "- NO inventes nuevas intenciones. Solo usá las de la lista.\n"
+            "**Reglas estrictas:**\n"
+            "- NO expliques nada.\n"
+            "- NO devuelvas texto adicional.\n"
+            "- NO uses comillas.\n"
+            "- NO inventes nuevas intenciones.\n"
+            "- Si la intención no requiere parámetro (como 'ver_carrito' o 'realizar_pedido'), solo devolvé la intención.\n"
         )
 
         response = requests.post(
@@ -156,7 +136,6 @@ class VoiceAssistantView(APIView):
             }
         )
 
-        
         content = response.json()["choices"][0]["message"]["content"]
         print(content)
         return content

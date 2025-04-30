@@ -22,7 +22,7 @@ urlpatterns = [
     path('favorites', views.get_favorite_products, name='get-favorite-products'),
     path('favoritesmost', views.get_most_favorited_products, name='get-most_favorited-products'),
     path('randomproducts', views.get_random_product, name='get-random-products'),
-    path('recommended', views.get_recommendations, name='get-recommendations'),
+    path('recommended', views.recommend_global_based_on_product, name='get-recommendations'),
     path('recommended_cart/<uuid:product_id>/', views.get_recommendations_cart, name='get-recommended-cart'),
     path('getProduct/<uuid:product_id>', views.get_product_by_id, name='get-product-id')
 ]
