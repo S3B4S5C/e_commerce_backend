@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import UserAccount, Role, Notification
+from .models import UserAccount, Role, Notification, UserNotification
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -27,4 +27,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ['id', 'message', 'created_at', 'is_read']
+        fields = ['id', 'type', 'title', 'message', 'created_at']
+
+
+class UserNotificationSerializer(serializers.ModelSerializer):
+    notification = NotificationSerializer()
+
+    class Meta:
+        model = UserNotification
+        fields = ['id', 'notification', 'is_read', 'received_at']

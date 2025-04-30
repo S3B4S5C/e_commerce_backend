@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
-from .serializers import UserAccountSerializer, UserProfileSerializer, NotificationSerializer
+from .serializers import UserAccountSerializer, UserProfileSerializer, NotificationSerializer, UserNotificationSerializer
 from .models import UserAccount, Notification, UserNotification
 from rest_framework.permissions import IsAuthenticated
 from logs.utils import get_client_ip
@@ -11,7 +11,7 @@ from firebase_admin import messaging
 import firebase_admin
 from firebase_admin import credentials
 
-# Create your views here.
+
 @api_view(['POST'])
 def create_user(request):
     """
@@ -148,9 +148,15 @@ def change_password(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_notifications(request):
-    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
-    serializer = NotificationSerializer(notifications, many=True)
-    return Response(serializer.data)
+    user = request.user
+    total_unread = UserNotification.objects.filter(user=user, is_read=False).count()
+    notifications = UserNotification.objects.filter(user=user).order_by('-received_at')
+    serializer = UserNotificationSerializer(notifications, many=True)
+    
+    return Response({
+        'total_unread': total_unread,
+        'notifications': serializer.data
+    })
 
 
 def add_notifications(title, body, type='OTHER', role='ADMIN'):
