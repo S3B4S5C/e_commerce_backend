@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from .serializers import UserAccountSerializer, UserProfileSerializer, NotificationSerializer
-from .models import UserAccount, Notification
+from .models import UserAccount, Notification, UserNotification
 from rest_framework.permissions import IsAuthenticated
 from logs.utils import get_client_ip
 from logs.models import ActivityLog
@@ -153,9 +153,31 @@ def get_notifications(request):
     return Response(serializer.data)
 
 
-from firebase_admin import messaging
+def add_notifications(title, body, type='OTHER', role='ADMIN'):
+    users_with_token = UserAccount.objects.filter(fcm_token__isnull=False, role=role).exclude(fcm_token='')
+    print(users_with_token)
+    tokens = users_with_token.values_list('fcm_token', flat=True)
+    try:
+        notifications = Notification.objects.create(
+            type=type,
+            title=title,
+            message=body,
+            )
+        user_notifications = [
+            UserNotification(user=user, notification=notifications)
+            for user in users_with_token
+        ]
+        UserNotification.objects.bulk_create(user_notifications)
+        send_multicast_notification(
+            list(tokens),
+            title,
+            body
+        )
+    except Exception as e:
+        print(f"Error enviando push a {users_with_token}: {e}")
 
-def send_multicast_notification(tokens, title, body, data=None):   
+
+def send_multicast_notification(tokens, title, body, data=None, role='ADMIN'):
     if not firebase_admin._apps:
         cred = credentials.Certificate("e-commerce.json")
         firebase_admin.initialize_app(cred)

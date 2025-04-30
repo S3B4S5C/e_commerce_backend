@@ -1,6 +1,7 @@
 # permissions.py
 from rest_framework.permissions import BasePermission
 
+
 class IsAdminRole(BasePermission):
     """
     Permite el acceso solo a usuarios con rol 'ADMIN'.

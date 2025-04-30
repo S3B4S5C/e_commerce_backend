@@ -14,12 +14,14 @@ from django.views.decorators.csrf import csrf_exempt
 from logs.utils import get_client_ip
 from logs.models import ActivityLog
 from users.permisions import IsAdminRole
-from users.views import send_multicast_notification
+from users.views import send_multicast_notification, add_notifications
 from users.models import UserAccount
 from users.views import send_multicast_notification
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def register_product(request):
     """
     Crea un nuevo producto
@@ -36,18 +38,7 @@ def register_product(request):
             entity_id=product.id,
             ip_address=ip
         )
-        users_with_token = UserAccount.objects.filter(fcm_token__isnull=False).exclude(fcm_token='')
-        print(users_with_token)
-        tokens = users_with_token.values_list('fcm_token', flat=True)
-
-        try:
-            send_multicast_notification(
-                list(tokens),
-                title="¡Nuevo producto disponible!",
-                body=f'Ahora puedes ver "{product.name}" en el catálogo.',
-            )
-        except Exception as e:
-            print(f"Error enviando push a {users_with_token}: {e}")
+        add_notifications('¡Nuevo Producto disponible!', f'Ahora puede ver "{product.name}" en el catálogo', 'NEW_PRODUCT', 'CLIENT')
         return Response({
             'message': 'Producto creado correctamente',
             'product': ProductSerializer(product).data
@@ -62,7 +53,6 @@ def cors_test(request):
 
 @api_view(['GET'])
 def product_list(request):
-    print('Hola')
     products = Product.objects.filter(deleted_at__isnull=True)
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data)
@@ -140,6 +130,7 @@ def search_product(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAdminRole])
 def create_tag(request):
     name = request.data.get('name')
     if not name:
@@ -149,6 +140,7 @@ def create_tag(request):
 
 
 @api_view(['DELETE'])
+@permission_classes([IsAdminRole])
 def delete_tag(request, tag_id):
     try:
         tag = Tag.objects.get(id=tag_id)
@@ -159,6 +151,7 @@ def delete_tag(request, tag_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_review(request, product_id):
     try:
         product = Product.objects.get(id=product_id)
@@ -186,6 +179,7 @@ def create_review(request, product_id):
 
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def delete_review(request, review_id):
     try:
         review = ProductReview.objects.get(id=review_id, user=request.user)
@@ -196,6 +190,7 @@ def delete_review(request, review_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def add_to_favorites(request, product_id):
     try:
         product = Product.objects.get(id=product_id)
@@ -221,6 +216,7 @@ def get_product_by_id(request, product_id):
 
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def remove_from_favorites(request, product_id):
     try:
         favorite = FavoriteProduct.objects.get(user=request.user, product_id=product_id)
@@ -231,6 +227,8 @@ def remove_from_favorites(request, product_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def associate_tag_to_product(request):
     product_id = request.data.get('product_id')
     tag_id = request.data.get('tag_id')
@@ -261,6 +259,8 @@ def associate_tag_to_product(request):
 
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def remove_tag_from_product(request):
     product_id = request.data.get('product_id')
     tag_id = request.data.get('tag_id')
@@ -269,14 +269,14 @@ def remove_tag_from_product(request):
         return Response({'error': 'Faltan parámetros (product_id y tag_id)'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        tagged = Tagged.objects.get(product_id=product_id, tag_id=tag_id)
+        tagged = Tagged.objects.get(product=product_id, tag=tag_id)
         tagged.delete()
         ip = get_client_ip(request)
         ActivityLog.objects.create(
             type='tag',
             user=request.user,
             description='Se agrego un tag a un producto',
-            entity_id=tag_id.id,
+            entity_id=tag_id,
             ip_address=ip
                 )
         return Response({'message': 'Tag desasociado del producto correctamente'}, status=status.HTTP_200_OK)
@@ -294,7 +294,18 @@ def get_tags_for_product(request, product_id):
         return Response({'error': 'Producto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
 
+@api_view(['GET'])
+def get_tags(request):
+    """
+    Devuelve todos los tags disponibles.
+    """
+    tags = Tag.objects.all().values('id', 'name')
+    return Response({'tags': list(tags)}, status=status.HTTP_200_OK)
+
+
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def delete_product(request, product_id):
     """
     Elimina un producto (soft delete si deseas).
@@ -317,6 +328,8 @@ def delete_product(request, product_id):
 
 
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def update_product(request, product_id):
     """
     Actualiza los datos de un producto.

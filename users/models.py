@@ -51,11 +51,24 @@ class Notification(models.Model):
         OTHER = 'OTHER', 'Otro'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='notifications')
     type = models.CharField(max_length=30, choices=NotificationType.choices)
+    title = models.TextField(null=True)
     message = models.TextField()
-    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def _str_(self):
         return f"{self.user.email} - {self.type}"
+
+
+class UserNotification(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
+    notification = models.ForeignKey('Notification', on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+    received_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'notification')
+
+    def __str__(self):
+        return f"{self.user.email} - {self.notification.type}"

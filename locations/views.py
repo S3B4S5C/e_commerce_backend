@@ -9,6 +9,7 @@ from products.models import Product, Stock
 from logs.utils import get_client_ip
 from logs.models import ActivityLog
 from users.models import UserAccount
+from users.permisions import IsAdminRole
 
 
 @api_view(['POST'])
@@ -62,6 +63,7 @@ def delete_address(request, address_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def register_branch(request):
     """
     Crea una nueva sucursal con su dirección y coordenadas (usando serializers).
@@ -85,42 +87,9 @@ def register_branch(request):
         return Response(address_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['DELETE'])
-def delete_branch(request, branch_id):
-    """
-    Elimina una sucursal (soft delete).
-    """
-    try:
-        branch = Branch.objects.get(id=branch_id, deleted_at__isnull=True)
-        branch.deleted_at = timezone.now()
-        branch.save()
-        return Response({'message': 'Sucursal eliminada correctamente'}, status=status.HTTP_200_OK)
-    except Branch.DoesNotExist:
-        return Response({'error': 'Sucursal no encontrada'}, status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(['GET'])
-def stock_by_branch(request, product_id):
-    try:
-        product = Product.objects.get(id=product_id)
-        stock_data = Stock.objects.filter(product=product).select_related('branch')
-
-        result = [
-            {
-                'branch_id': str(stock.branch.id),
-                'branch_name': stock.branch.name,
-                'quantity': stock.quantity
-            }
-            for stock in stock_data
-        ]
-
-        return Response({'product': str(product.id), 'stock_by_branch': result}, status=status.HTTP_200_OK)
-    except Product.DoesNotExist:
-        return Response({'error': 'Producto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-
-
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
+@permission_classes([IsAdminRole])
 def update_stock(request):
     print(request.data)
     product_id = request.data.get('product_id')

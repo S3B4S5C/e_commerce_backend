@@ -12,6 +12,7 @@ urlpatterns = [
     path('tags/associate', views.associate_tag_to_product, name='associate-tag-product'),
     path('tags/remove', views.remove_tag_from_product, name='remove-tag-product'),
     path('tags/product/<uuid:product_id>', views.get_tags_for_product, name='get-tags-product'),
+    path('tags', views.get_tags, name='get-tags'),
     path('reviews/create/<uuid:product_id>', views.create_review, name='create-review'),
     path('reviews/delete/<uuid:review_id>', views.delete_review, name='delete-review'),
     path('favorites/add/<uuid:product_id>', views.add_to_favorites, name='add-favorites'),

@@ -15,19 +15,9 @@ from cart.models import Cart, CartItem
 from users.models import UserAccount, Notification
 from django.db.models import Sum
 from users.views import send_multicast_notification
-
+from users.views import add_notifications
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_order(request):
-    serializer = OrderSerializer(data=request.data, context={'request': request})
-    if serializer.is_valid():
-        order = serializer.save()
-        return Response({'message': 'Pedido realizado con éxito', 'order_id': order.id}, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -72,7 +62,7 @@ def create_order_with_payment(request):
 
     payment_detail = PaymentDetail.objects.create(
         stripe_payment_id=payment_intent.id,
-        state='pendiente',
+        state='Pendiente',
         provider='stripe',
         created_at=timezone.now(),
         modified_at=timezone.now()
@@ -107,27 +97,7 @@ def create_order_with_payment(request):
         total_stock = Stock.objects.filter(product=item.product).aggregate(total=Sum('quantity'))['total'] or 0
 
         if total_stock < 5:
-            admins = UserAccount.objects.filter(role=UserAccount.RoleChoices.ADMIN, is_active=True)
-
-            for admin in admins:
-                Notification.objects.create(
-                    user=admin,
-                    type=Notification.NotificationType.LOW_STOCK,
-                    message=f'El stock del producto "{item.product.name}" ha bajado a {total_stock} unidades.',
-                )
-                if admin.fcm_token:
-                    try:
-                        send_multicast_notification(
-                            token=admin.fcm_token,
-                            title="¡Stock bajo!",
-                            body=f'El stock de "{item.product.name}" es ahora de {total_stock} unidades.',
-                            data={
-                                'product_id': str(item.product.id),
-                                'type': 'low_stock'
-                            }
-                        )
-                    except Exception as e:
-                        print(f'Error enviando notificación push: {e}')
+            add_notifications("¡Stock bajo!", f'El stock de "{item.product.name}" es ahora de {total_stock} unidades.', 'LOW_STOCK', 'ADMIN')
     cart.deleted_at = timezone.now()
     cart.save()
 
@@ -170,40 +140,6 @@ def confirmar_pago(request, payment_id):
 
     except PaymentDetail.DoesNotExist:
         return Response({'error': 'Pago no encontrado'}, status=404)
-
-
-@csrf_exempt
-def stripe_webhook(request):
-    payload = request.body
-    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
-    endpoint_secret = 'whsec_...'  # tu clave secreta de webhook
-
-    try:
-        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
-    except stripe.error.SignatureVerificationError:
-        return JsonResponse({'error': 'Invalid signature'}, status=400)
-
-    if event['type'] == 'payment_intent.succeeded':
-        intent = event['data']['object']
-        payment_id = intent['id']
-
-        try:
-            payment = PaymentDetail.objects.get(stripe_payment_id=payment_id)
-            payment.state = 'pagado'
-            payment.save()
-
-            # Crear factura
-            Invoice.objects.create(
-                order=payment.order,
-                nit='0',  # Aquí puedes tomar de request o del usuario
-                razon_social='Consumidor final',
-                total_amount=payment.order.total_price
-            )
-
-        except PaymentDetail.DoesNotExist:
-            return JsonResponse({'error': 'PaymentDetail not found'}, status=404)
-
-    return JsonResponse({'status': 'success'})
 
 
 @api_view(['POST'])
